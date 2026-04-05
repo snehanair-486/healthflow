@@ -5,6 +5,8 @@ HealthFlow is a multi-agent AI system that helps users manage their health, task
 ## 🌐 Live Demo
 [https://healthflow-frontend-399487985042.asia-south1.run.app](https://healthflow-frontend-399487985042.asia-south1.run.app)
 
+---
+
 ## 🧠 System Architecture
 
 HealthFlow uses a multi-agent architecture where a primary orchestrator routes user requests to specialized sub-agents:
@@ -13,6 +15,8 @@ HealthFlow uses a multi-agent architecture where a primary orchestrator routes u
 - **Health Agent** — handles hydration tracking, water goals, and health metrics
 - **Task Agent** — creates, manages, and tracks health-related tasks
 - **Reminder Agent** — manages reminders and scheduling
+
+---
 
 ## ✨ Features
 
@@ -24,24 +28,28 @@ HealthFlow uses a multi-agent architecture where a primary orchestrator routes u
 - 🌙 **Light/Dark Mode** — theme toggle that persists across sessions
 - 📱 **Works on mobile** — accessible from any device via browser
 
+---
+
 ## 🛠 Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React + Vite |
-| Backend | Node.js + Express |
-| Database | Supabase (PostgreSQL) |
-| AI | Groq LLaMA 3.3 |
-| Deployment | Google Cloud Run |
-| Styling | CSS Variables + Framer Motion |
+- **Frontend** — React + Vite
+- **Backend** — Node.js + Express
+- **Database** — Supabase (PostgreSQL)
+- **AI** — Groq LLaMA 3.3
+- **Deployment** — Google Cloud Run
+- **Styling** — CSS Variables + Framer Motion
+
+---
 
 ## 🗄 Database Schema
 
-- `users` — authentication and user profiles
-- `health_profiles` — BMI, weight, height, activity level
-- `hydration_logs` — water intake entries
-- `tasks` — health tasks with priority and category
-- `chat_history` — AI conversation history per user
+- **users** — `id`, `email`, `password`, `name`, `created_at`
+- **health_profiles** — `id`, `user_id`, `name`, `weight_kg`, `height_cm`, `age`, `gender`, `activity_level`, `goal`, `updated_at`
+- **hydration_logs** — `id`, `user_id`, `amount_ml`, `note`, `logged_at`
+- **tasks** — `id`, `user_id`, `title`, `category`, `priority`, `completed`, `completed_at`, `created_at`
+- **chat_history** — `id`, `user_id`, `role`, `content`, `created_at`
+
+---
 
 ## 🚀 Local Setup
 
@@ -71,19 +79,3 @@ SUPABASE_URL=your_supabase_url
 SUPABASE_ANON_KEY=your_supabase_anon_key
 FRONTEND_URL=http://localhost:5173
 PORT=3001
-
-## 📦 Deployment
-
-Both services are deployed on **Google Cloud Run**:
-```bash
-# Deploy backend
-cd backend
-gcloud run deploy healthflow-backend --source . --region asia-south1 --allow-unauthenticated --platform managed
-
-# Deploy frontend  
-cd frontend
-gcloud run deploy healthflow-frontend --source . --region asia-south1 --allow-unauthenticated --platform managed --port 8080
-```
-
-## 👩‍💻 Author
-Sneha Nair
