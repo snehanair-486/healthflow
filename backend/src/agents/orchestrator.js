@@ -18,10 +18,13 @@ export async function runOrchestrator(userId, userMessage) {
   const routingPrompt = `You are HealthFlow, a personal health assistant. You coordinate specialist agents.
 
 Analyze the user's message and decide which agent(s) to call:
-- HEALTH_AGENT: hydration questions, BMI, wellness analysis, water intake, health stats
-- TASK_AGENT: creating tasks, listing tasks, completing tasks, scheduling health activities
-- BOTH: when the request involves both analysis and task creation
+- HEALTH_AGENT: ANY message containing ml or water amount ("I drank Xml", "add Xml water", "log Xml", "had Xml water", hydration questions, BMI, wellness analysis, health stats
+- TASK_AGENT: creating tasks ("create a task", "add a task", "remind me to"), listing tasks, completing tasks, scheduling health activities
+- BOTH: when the request involves both health analysis AND task creation together
 - DIRECT: simple greetings, general chat, explaining what you can do
+
+IMPORTANT: If the user mentions drinking water or logging water intake, ALWAYS use HEALTH_AGENT.
+IMPORTANT: If the user wants to create or add a task, ALWAYS use TASK_AGENT.
 
 Respond with ONLY one of: HEALTH_AGENT, TASK_AGENT, BOTH, DIRECT
 Then on the next line, if DIRECT, write your response.`;

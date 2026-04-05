@@ -1,5 +1,6 @@
 import { groq, MODEL } from '../groq.js';
 import { supabase } from '../db.js';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function runHealthAgent(userId, query) {
   const { data: profile } = await supabase
@@ -13,8 +14,8 @@ export async function runHealthAgent(userId, query) {
     .from('hydration_logs')
     .select('*')
     .eq('user_id', userId)
-    .eq('date', today);
-
+    .eq('date', today)
+    .order('logged_at', { ascending: true });
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const { data: weekLogs } = await supabase
     .from('hydration_logs')
@@ -32,6 +33,35 @@ export async function runHealthAgent(userId, query) {
     recommendedMl = Math.round(profile.weight_kg * 35 * (activityMultipliers[profile.activity_level] || 1.2));
   }
 
+  // Check if user is logging water
+  const waterMatch = query.match(/(\d+)\s*ml/i);
+  const isLogging = waterMatch && (
+    query.toLowerCase().includes('drank') ||
+    query.toLowerCase().includes('drank') ||
+    query.toLowerCase().includes('drunk') ||
+    query.toLowerCase().includes('had') ||
+    query.toLowerCase().includes('drink') ||
+    query.toLowerCase().includes('log') ||
+    query.toLowerCase().includes('add') ||
+    query.toLowerCase().includes('consumed')
+  );
+
+  let actualTotal = todayTotal;
+
+  if (isLogging && waterMatch) {
+    const amount = parseInt(waterMatch[1]);
+    const { error: insertError } = await supabase.from('hydration_logs').insert({
+      id: uuidv4(),
+      user_id: userId,
+      amount_ml: amount,
+      note: `Logged via AI chat`,
+      date: today,
+      logged_at: new Date().toISOString()
+    });
+    if (insertError) console.error('Hydration insert error:', insertError);
+    actualTotal = todayTotal + amount;
+  }
+
   const systemPrompt = `You are a Health Agent, a specialist in hydration, BMI, and wellness analysis.
 
 User Profile:
@@ -44,11 +74,13 @@ ${profile ? `- Name: ${profile.name || 'User'}
 - Goal: ${profile.goal}
 - BMI: ${profile.weight_kg && profile.height_cm ? (profile.weight_kg / ((profile.height_cm / 100) ** 2)).toFixed(1) : 'not calculated'}` : 'No profile set up yet.'}
 
-Today's Hydration: ${todayTotal}ml / ${recommendedMl}ml recommended
-Deficit/Surplus: ${todayTotal - recommendedMl}ml
+Today's Hydration: ${actualTotal}ml / ${recommendedMl}ml recommended
+Deficit/Surplus: ${actualTotal - recommendedMl}ml
 Weekly data: ${JSON.stringify(weekLogs || [])}
 
-Be warm but direct. Use numbers. Keep response under 150 words unless doing a full analysis.`;
+${isLogging && waterMatch ? `The user just logged ${waterMatch[1]}ml. Their new total is ${actualTotal}ml. Confirm this and tell them how much more they need.` : ''}
+
+Be warm but direct. Use the EXACT numbers above — never make up numbers. Keep response under 150 words.`;
 
   const response = await groq.chat.completions.create({
     model: MODEL,
@@ -62,6 +94,6 @@ Be warm but direct. Use numbers. Keep response under 150 words unless doing a fu
 
   return {
     response: response.choices[0].message.content,
-    data: { todayHydration: todayTotal, recommendedMl, profile, deficit: todayTotal - recommendedMl }
+    data: { todayHydration: actualTotal, recommendedMl, profile, deficit: actualTotal - recommendedMl }
   };
 }
