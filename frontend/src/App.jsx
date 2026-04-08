@@ -9,6 +9,8 @@ import Hydration from './pages/Hydration';
 import Tasks from './pages/Tasks';
 import Insights from './pages/Insights';
 import Profile from './pages/Profile';
+import Nutrition from './pages/Nutrition';
+import Checkin from './pages/Checkin';
 import Login from './pages/Login';
 
 export default function App() {
@@ -91,6 +93,8 @@ export default function App() {
               <Route path="/tasks" element={<Tasks />} />
               <Route path="/insights" element={<Insights />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/nutrition" element={<Nutrition />} />
+              <Route path="/checkin" element={<Checkin />} />
             </Routes>
           </main>
         </div>

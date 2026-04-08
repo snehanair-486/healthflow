@@ -34,3 +34,16 @@ export const profileAPI = {
   get: () => API.get(`/profile/${getUserId()}`),
   save: (data) => API.post('/profile', { userId: getUserId(), ...data }),
 };
+
+export const nutritionAPI = {
+  analyze: (meal_description, meal_type) => API.post('/nutrition/analyze', { userId: getUserId(), meal_description, meal_type }),
+  today: () => API.get(`/nutrition/${getUserId()}/today`),
+  week: () => API.get(`/nutrition/${getUserId()}/week`),
+  delete: (id) => API.delete(`/nutrition/${id}`),
+};
+
+export const checkinAPI = {
+  save: (data) => API.post('/checkin', { userId: getUserId(), ...data }),
+  today: () => API.get(`/checkin/${getUserId()}/today`),
+  recent: () => API.get(`/checkin/${getUserId()}/recent`),
+};

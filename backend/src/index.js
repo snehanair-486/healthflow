@@ -5,6 +5,8 @@ import healthRoutes from './routes/health.js';
 import tasksRoutes from './routes/tasks.js';
 import chatRoutes from './routes/chat.js';
 import profileRoutes from './routes/profile.js';
+import nutritionRoutes from './routes/nutrition.js';
+import checkinRoutes from './routes/checkin.js';
 import authRoutes from './routes/auth.js';
 
 dotenv.config();
@@ -29,6 +31,8 @@ app.use('/api/health', healthRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/nutrition', nutritionRoutes);
+app.use('/api/checkin', checkinRoutes);
 
 app.get('/api/ping', (req, res) => res.json({ status: 'HealthOS backend running' }));
 

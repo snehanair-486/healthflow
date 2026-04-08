@@ -1,11 +1,13 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Droplets, CheckSquare, MessageCircle, User, Activity } from 'lucide-react';
+import { LayoutDashboard, Droplets, CheckSquare, MessageCircle, User, Activity, Utensils, ClipboardCheck } from 'lucide-react';
 
 const nav = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/chat', icon: MessageCircle, label: 'AI Chat' },
   { to: '/hydration', icon: Droplets, label: 'Hydration' },
+  { to: '/nutrition', icon: Utensils, label: 'Nutrition' },
   { to: '/tasks', icon: CheckSquare, label: 'Tasks' },
+  { to: '/checkin', icon: ClipboardCheck, label: 'Daily Check-in' },
   { to: '/insights', icon: Activity, label: 'Insights' },
   { to: '/profile', icon: User, label: 'Profile' },
 ];
