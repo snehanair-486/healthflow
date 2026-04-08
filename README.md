@@ -1,6 +1,6 @@
 # ⚡ HealthFlow — AI-Powered Personal Health Assistant
 
-HealthFlow is a multi-agent AI system that helps users manage their health, tasks, hydration, and wellness through intelligent agents and real-time data.
+HealthFlow is a multi-agent AI system that helps users manage their health, tasks, hydration, nutrition, and daily wellness through intelligent agents and real-time data.
 
 ---
 
@@ -14,7 +14,7 @@ HealthFlow is a multi-agent AI system that helps users manage their health, task
 HealthFlow uses a multi-agent architecture where a primary orchestrator routes user requests to specialized sub-agents:
 
 - **Orchestrator Agent** — understands user intent and delegates to the right agent
-- **Health Agent** — handles hydration tracking, water goals, and health metrics
+- **Health Agent** — handles hydration, nutrition context, sleep history, and wellness questions with full user context
 - **Task Agent** — creates, manages, and tracks health-related tasks
 - **Reminder Agent** — manages reminders and scheduling
 
@@ -22,13 +22,16 @@ HealthFlow uses a multi-agent architecture where a primary orchestrator routes u
 
 ## ✨ Features
 
-- 🤖 **Multi-Agent AI Chat** — talk to 3 specialized AI agents powered by Groq LLaMA
-- 💧 **Hydration Tracker** — log water intake, track daily goals, view progress
-- ✅ **Task Manager** — create and manage health tasks with priority levels
-- 📊 **Dashboard** — real-time health overview with progress rings and stats
-- 👤 **User Authentication** — register and login with email and password
-- 🌙 **Light/Dark Mode** — theme toggle that persists across sessions
+- 🤖 **Multi-Agent AI Chat** — 3 specialized agents powered by Groq LLaMA 3.3; can log water, create tasks, and answer personalized health questions
+- 💧 **Hydration Tracker** — log water intake manually or via AI chat, track daily goals with a progress ring
+- 🍽️ **Nutrition Tracker** — log meals in plain text and get instant AI-powered calorie, protein, carbs, fat and health score analysis
+- 📋 **Daily Check-in** — log sleep hours, mood (1–10), energy level and symptoms every day; AI references this history for personalized advice
+- ✅ **Task Manager** — create and manage health tasks with priority levels and categories
+- 📊 **Dashboard** — real-time health overview with progress rings and daily stats
+- 👤 **User Authentication** — register and login with email and password; all data is private per user
+- 🌙 **Light/Dark Mode** — theme toggle that persists across sessions and logout
 - 📱 **Works on mobile** — accessible from any device via browser
+- 🧠 **Context-aware AI** — Health Agent reads nutrition logs, sleep history, mood and hydration together to answer questions like "what should I eat for dinner today" or "I have a headache, what should I do"
 
 ---
 
@@ -47,9 +50,11 @@ HealthFlow uses a multi-agent architecture where a primary orchestrator routes u
 
 - **users** — `id`, `email`, `password`, `name`, `created_at`
 - **health_profiles** — `id`, `user_id`, `name`, `weight_kg`, `height_cm`, `age`, `gender`, `activity_level`, `goal`, `updated_at`
-- **hydration_logs** — `id`, `user_id`, `amount_ml`, `note`, `logged_at`
+- **hydration_logs** — `id`, `user_id`, `amount_ml`, `note`, `date`, `logged_at`
 - **tasks** — `id`, `user_id`, `title`, `category`, `priority`, `completed`, `completed_at`, `created_at`
 - **chat_history** — `id`, `user_id`, `role`, `content`, `created_at`
+- **nutrition_logs** — `id`, `user_id`, `meal_description`, `meal_type`, `calories`, `protein_g`, `carbs_g`, `fat_g`, `health_score`, `analysis`, `date`, `logged_at`
+- **daily_checkins** — `id`, `user_id`, `sleep_hours`, `mood_score`, `energy_level`, `symptoms`, `notes`, `date`, `logged_at`
 
 ---
 
