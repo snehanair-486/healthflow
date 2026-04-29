@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { LogOut } from 'lucide-react';
 import Sidebar from './components/Sidebar';
@@ -12,34 +12,85 @@ import Profile from './pages/Profile';
 import Nutrition from './pages/Nutrition';
 import Checkin from './pages/Checkin';
 import Login from './pages/Login';
+import Onboarding from './pages/Onboarding';
+import { profileAPI } from './api';
 
-export default function App() {
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('hf_user') || 'null'));
-  const [dark, setDark] = useState(() => localStorage.getItem('hf_theme') !== 'light');
+// Cache key for profile completion status
+const PROFILE_CACHE_KEY = 'hf_profile_complete';
+
+function AppShell({ user, onLogout, dark, setDark }) {
+  const [hasProfile, setHasProfile] = useState(() => {
+    // Check localStorage cache first — avoids flash of onboarding on every refresh
+    return localStorage.getItem(PROFILE_CACHE_KEY) === 'true' ? true : null;
+  });
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-    localStorage.setItem('hf_theme', dark ? 'dark' : 'light');
-  }, [dark]);
+    // If we already have a cached 'true', still verify in background silently
+    // but don't show loading screen — trust the cache
+    profileAPI.get()
+      .then(r => {
+        const p = r.data;
+        // Match the field names your backend actually returns
+        // Backend receives: weight, height → check both naming conventions
+        const hasRequiredFields =
+          p && p.age && (p.weight_kg || p.weight) && (p.height_cm || p.height);
 
-  const handleLogin = (userData) => setUser(userData);
+        if (hasRequiredFields) {
+          localStorage.setItem(PROFILE_CACHE_KEY, 'true');
+          setHasProfile(true);
+        } else {
+          localStorage.removeItem(PROFILE_CACHE_KEY);
+          setHasProfile(false);
+        }
+      })
+      .catch(() => {
+        // Network error — if we had a cached value, trust it
+        // Only redirect to onboarding if there was no cached value
+        if (localStorage.getItem(PROFILE_CACHE_KEY) !== 'true') {
+          setHasProfile(false);
+        }
+      });
+  }, []);
 
-  // Fix 3: theme is NOT cleared on logout
-  const handleLogout = () => {
-    localStorage.removeItem('hf_user');
-    setUser(null);
+  const handleOnboardingComplete = () => {
+    localStorage.setItem(PROFILE_CACHE_KEY, 'true');
+    setHasProfile(true);
   };
 
-  if (!user) return <Login onLogin={handleLogin} />;
+  // Still loading — but only show spinner if we have no cached answer
+  if (hasProfile === null) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        minHeight: '100vh', color: 'var(--muted)'
+      }}>
+        Loading...
+      </div>
+    );
+  }
 
+  // New user — show onboarding fullscreen
+  if (hasProfile === false) {
+    return (
+      <>
+        <Toaster position="top-right" toastOptions={{
+          style: { background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)' }
+        }} />
+        <Routes>
+          <Route path="*" element={<Onboarding onComplete={handleOnboardingComplete} />} />
+        </Routes>
+      </>
+    );
+  }
+
+  // Existing user — normal app
   return (
-    <BrowserRouter>
+    <>
       <Toaster position="top-right" toastOptions={{
         style: { background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)' }
       }} />
       <div style={{ display: 'flex' }}>
         <Sidebar />
-
         <div style={{ marginLeft: 220, flex: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
           {/* Top navbar */}
@@ -48,7 +99,6 @@ export default function App() {
             display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
             padding: '0 32px', gap: 12, position: 'sticky', top: 0, zIndex: 99
           }}>
-            {/* Theme toggle */}
             <button onClick={() => setDark(!dark)} style={{
               background: 'var(--surface2)', border: '1px solid var(--border)',
               borderRadius: 8, padding: '6px 12px', cursor: 'pointer',
@@ -57,7 +107,6 @@ export default function App() {
               {dark ? '☀️ Light' : '🌙 Dark'}
             </button>
 
-            {/* User name */}
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8,
               background: 'var(--surface2)', border: '1px solid var(--border)',
@@ -74,8 +123,7 @@ export default function App() {
               <span style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{user.name}</span>
             </div>
 
-            {/* Logout */}
-            <button onClick={handleLogout} style={{
+            <button onClick={onLogout} style={{
               background: 'transparent', border: '1px solid var(--border)',
               borderRadius: 8, padding: '6px 12px', cursor: 'pointer',
               color: 'var(--muted)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6
@@ -99,6 +147,32 @@ export default function App() {
           </main>
         </div>
       </div>
+    </>
+  );
+}
+
+export default function App() {
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('hf_user') || 'null'));
+  const [dark, setDark] = useState(() => localStorage.getItem('hf_theme') !== 'light');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    localStorage.setItem('hf_theme', dark ? 'dark' : 'light');
+  }, [dark]);
+
+  const handleLogin = (userData) => setUser(userData);
+
+  const handleLogout = () => {
+    localStorage.removeItem('hf_user');
+    localStorage.removeItem(PROFILE_CACHE_KEY); // Clear profile cache on logout
+    setUser(null);
+  };
+
+  if (!user) return <Login onLogin={handleLogin} />;
+
+  return (
+    <BrowserRouter>
+      <AppShell user={user} onLogout={handleLogout} dark={dark} setDark={setDark} />
     </BrowserRouter>
   );
 }
