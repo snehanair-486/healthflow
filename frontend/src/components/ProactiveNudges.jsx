@@ -27,7 +27,7 @@ function buildNudges({ todayWater = 0, waterGoal = 2000, todayCalories = 0, hasC
   const hour = new Date().getHours();
   const nudges = [];
 
-  if (hour >= 10 && todayWater < waterGoal * 0.5) {
+  if (todayWater < waterGoal * 0.5) {
     const pct = Math.round((todayWater / waterGoal) * 100);
     nudges.push({
       id: 'hydration',
@@ -43,11 +43,11 @@ function buildNudges({ todayWater = 0, waterGoal = 2000, todayCalories = 0, hasC
     });
   }
 
-  if (hour >= 14 && todayCalories < 500) {
+  if (todayCalories < 500) {
     nudges.push({
       id: 'nutrition',
       icon: Flame,
-      color: '#fb923c',
+      color: '#ddc38b',
       bg: 'rgba(251,146,60,0.06)',
       border: 'rgba(251,146,60,0.18)',
       title: 'Fuel your day',
@@ -58,7 +58,7 @@ function buildNudges({ todayWater = 0, waterGoal = 2000, todayCalories = 0, hasC
     });
   }
 
-  if (hour >= 8 && !hasCheckin) {
+  if (!hasCheckin) {
     nudges.push({
       id: 'checkin',
       icon: Smile,
