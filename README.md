@@ -1,7 +1,7 @@
 # ⚡ HealthFlow - AI Health Assistant
  
-HealthFlow is a multi-agent AI system that helps users manage their health, tasks, hydration, nutrition, and daily wellness through intelligent agents and real-time data.
- 
+HealthFlow is a multi-agent AI system that helps users manage their daily health and wellness through intelligent conversations. Instead of juggling multiple apps for hydration, nutrition, tasks, and mood tracking, users get one unified platform where they simply chat with an AI that understands, responds, and acts on their health needs.
+
 ---
  
 ## 🌐 Live Demo
@@ -11,37 +11,63 @@ HealthFlow is a multi-agent AI system that helps users manage their health, task
  
 ## 🧠 System Architecture
  
-HealthFlow uses a multi-agent architecture where a primary orchestrator routes user requests to specialized sub-agents:
+HealthFlow uses a multi-agent architecture where a primary Orchestrator Agent receives every user message, determines intent, and routes it to the right specialised sub-agent. Each sub-agent owns a specific health domain, has its own system prompt, and reads/writes directly to the user's Supabase database — making every response personalised and data-driven.
  
-- **Orchestrator Agent** — understands user intent and delegates to the right agent
-- **Health Agent** — handles hydration, nutrition context, sleep history, and wellness questions with full user context
-- **Task Agent** — creates, manages, and tracks health-related tasks
 ```
 User Message
      │
      ▼
-Orchestrator Agent
-     │
-     ├──▶ Health Agent  (hydration, nutrition, sleep, wellness)
-     └──▶ Task Agent    (create, complete, delete tasks)
+┌─────────────────────────────────┐
+│        Orchestrator Agent       │
+│   (intent detection + routing)  │
+│         Groq LLaMA 3.3          │
+└───────────┬─────────────────────┘
+            │
+     ┌──────┴──────┐
+     ▼             ▼
+┌─────────────┐  ┌─────────────┐
+│ Health      │  │ Task        │
+│ Agent       │  │ Agent       │
+│             │  │             │
+│ hydration   │  │ create task │
+│ nutrition   │  │ delete task │
+│ wellness    │  │ list tasks  │
+└──────┬──────┘  └──────┬──────┘
+       │                │
+       └──────┬─────────┘
+              ▼
+     ┌─────────────────┐
+     │   Supabase DB   │
+     │  (PostgreSQL)   │
+     │  per-user data  │
+     └─────────────────┘
+              │
+              ▼
+   Response to User +
+   Dashboard Updated in Real Time
 ```
+ 
+**How intent routing works:** The Orchestrator reads the user's message and classifies it — "log 500ml of water" goes to the Health Agent which calls the hydration API; "create a task to take my medication" goes to the Task Agent which inserts into the tasks table. The user never has to think about which agent handles what.
+ 
+**Why multi-agent over a single chatbot:** Each agent has a focused system prompt and domain context. The Health Agent reads your full nutrition logs, sleep history, mood scores, and hydration data before responding — giving answers that are actually personalised. A single generalist bot would dilute this context.
  
 ---
  
 ## ✨ Features
  
-- 🤖 **Multi-Agent AI Chat** — specialized agents powered by Groq LLaMA 3.3; can log water, create tasks, and answer personalised health questions
-- 💧 **Hydration Tracker** — log water intake manually or via AI chat, track daily goals with animated progress
-- 🍽️ **Nutrition Tracker** — log meals in plain text and get instant AI-powered calorie, protein, carbs, fat, and health score analysis
-- 📋 **Daily Check-in** — log sleep hours, mood (1–10), energy level, and symptoms every day; AI references this history for personalised advice
-- ✅ **Task Manager** — create and manage health tasks with priority levels and categories
-- 📊 **Dashboard** — real-time health overview with animated progress rings, daily stats, and proactive nudges
-- 🔔 **Proactive Nudges** — context-aware smart alerts (low hydration, missed check-in, calories too low) that appear when relevant and can be dismissed per day
-- 🧭 **Onboarding Flow** — 3-step profile setup for new users covering body metrics, activity level, and health goals
-- 👤 **User Authentication** — register and login with email and password; all data is private per user
-- 🌙 **Light/Dark Mode** — theme toggle that persists across sessions and logout
-- 📱 **Mobile-friendly** — accessible from any device via browser
-- 🧠 **Context-aware AI** — Health Agent reads nutrition logs, sleep history, mood, and hydration together to answer questions like "what should I eat for dinner today?" or "I have a headache, what should I do?"
+- 🤖 **Multi-Agent AI Chat** — log water, create tasks, ask health questions — all from one chat interface. The Orchestrator routes each message to the right agent automatically.
+- 🧠 **Context-Aware AI** — the Health Agent reads your nutrition logs, sleep history, mood, and hydration together before every response, so answers are actually personalised to your day.
+- 🔔 **Proactive Nudges** — smart dashboard alerts when hydration is low, check-in is missed, or calories are too low. Dismissible per day, each links directly to the relevant page.
+- 🧭 **Onboarding Flow** — 3-step profile setup (body metrics → activity level → goal) for new users. Powers BMI, personalised water goals, and AI recommendations from day one.
+- 📋 **Daily Check-in** — log sleep, mood (1–10), energy, and symptoms in under 30 seconds. The Health Agent reads this history when answering wellness questions.
+- 🍽️ **Nutrition Tracker** — describe a meal in plain text and get instant AI analysis: calories, protein, carbs, fat, and a health score out of 100.
+- 💧 **Hydration Tracker** — quick-log buttons, custom input, and an animated bottle visualiser. Also loggable directly from AI chat.
+- ✅ **Task Manager** — health tasks with priority levels and categories, creatable manually or via AI chat.
+- 📊 **Dashboard** — animated SVG progress rings, stat cards, and upcoming tasks — updated in real time.
+- 👤 **User Authentication** — email/password login. All data is private and scoped per user.
+- 🌙 **Light/Dark Mode** — persists across sessions and logout.
+- 📱 **Mobile-Friendly** — accessible from any mobile browser, no install needed.
+
 ---
  
 ## 🛠 Tech Stack
@@ -54,7 +80,6 @@ Orchestrator Agent
 | AI         | Groq LLaMA 3.3                |
 | Deployment | Google Cloud Run              |
 | Styling    | CSS Variables + Framer Motion |
-| Fonts      | Outfit + Plus Jakarta Sans    |
  
 ---
  
@@ -90,6 +115,7 @@ healthflow/
 │   │   │   ├── Login.jsx           # Auth (login + register)
 │   │   │   └── Onboarding.jsx      # 3-step new user setup
 │   │   ├── components/
+│   │   │   ├── Sidebar.jsx         # Navigation sidebar
 │   │   │   └── ProactiveNudges.jsx # Context-aware smart alerts
 │   │   ├── hooks/
 │   │   │   └── useProfile.js       # Profile + BMI + water goal hook
@@ -147,3 +173,4 @@ SUPABASE_ANON_KEY=your_supabase_anon_key
 FRONTEND_URL=http://localhost:5173
 PORT=3001
 ```
+ 
