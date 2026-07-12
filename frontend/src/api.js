@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'https://healthflow-backend-399487985042.asia-south1.run.app/api',
+  baseURL: 'https://healthflow-bure.onrender.com/api',
 });
 
 export const getUser = () => JSON.parse(localStorage.getItem('hf_user') || 'null');
