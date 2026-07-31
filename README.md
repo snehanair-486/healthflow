@@ -4,11 +4,6 @@ HealthFlow is a multi-agent AI system that helps users manage their daily health
 
 ---
  
-## 🌐 Live Demo
-[https://healthflow-iota.vercel.app](https://healthflow-iota.vercel.app)
- 
----
- 
 ## 🧠 System Architecture
  
 HealthFlow uses a multi-agent architecture where a primary Orchestrator Agent receives every user message, determines intent, and routes it to the right specialised sub-agent. Each sub-agent owns a specific health domain, has its own system prompt, and reads/writes directly to the user's Supabase database — making every response personalised and data-driven.
