@@ -175,9 +175,6 @@ export default function Hydration() {
                 {log.amount_ml}ml
               </span>
               {log.note && <span style={{ color:'var(--muted)', fontSize:12 }}>{log.note}</span>}
-              <span style={{ color:'var(--muted)', fontSize:11 }}>
-                {new Date(log.logged_at).toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' })}
-              </span>
             </motion.div>
           ))
         )}

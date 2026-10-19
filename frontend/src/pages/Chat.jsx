@@ -1,3 +1,5 @@
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Bot, User } from 'lucide-react';
@@ -65,7 +67,7 @@ export default function Chat() {
           AI Health Assistant
         </h1>
         <p style={{ color: 'var(--muted)', fontSize: 12, letterSpacing: '-0.01em', fontWeight: 500 }}>
-          Powered by 3 specialized agents · Groq LLaMA 3.3
+          Powered by 3 specialized agents · Groq 
         </p>
       </div>
 
@@ -188,7 +190,9 @@ export default function Chat() {
                   color: msg.role === 'user' ? 'white' : 'var(--text)',
                   boxShadow: msg.role === 'user' ? '0 4px 12px rgba(124,106,247,0.2)' : 'none',
                 }}>
-                  {msg.content}
+                  {msg.role === 'assistant'
+  ? <div className="md"><ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown></div>
+  : msg.content}
                 </div>
               </div>
             </motion.div>

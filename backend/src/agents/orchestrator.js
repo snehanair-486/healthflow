@@ -1,77 +1,63 @@
-import { groq, MODEL } from '../groq.js';
+﻿import { groq, MODEL } from '../groq.js';
 import { supabase } from '../db.js';
 import { runHealthAgent } from './healthAgent.js';
 import { runTaskAgent } from './taskAgent.js';
 import { runReminderAgent } from './reminderAgent.js';
+import { routeMessage } from '../routing/router.js';
+import { logRouting } from '../routing/logger.js';
 import { v4 as uuidv4 } from 'uuid';
 
+async function maybeRemind(userId, taskCreated) {
+  if (taskCreated && (taskCreated.priority === 'high' || taskCreated.due_time)) {
+    await runReminderAgent(userId, taskCreated.id, `Reminder: ${taskCreated.title}`, taskCreated.due_time);
+  }
+}
+
 export async function runOrchestrator(userId, userMessage) {
+  const strategy = process.env.ROUTING_STRATEGY || 'full';
+
   const { data: history } = await supabase
     .from('chat_history')
     .select('role, content')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(10);
-
   const recentHistory = (history || []).reverse();
 
-  const routingPrompt = `You are HealthFlow, a personal health assistant. You coordinate specialist agents.
+  const decision = await routeMessage({ message: userMessage, history: recentHistory, strategy });
+  logRouting(userId, userMessage, decision); // fire and forget
 
-Analyze the user's message and decide which agent(s) to call:
-- HEALTH_AGENT: ANY message containing ml or water amount ("I drank Xml", "add Xml water", "log Xml", "had Xml water", hydration questions, BMI, wellness analysis, health stats
-- TASK_AGENT: creating tasks ("create a task", "add a task", "remind me to"), listing tasks, completing tasks, scheduling health activities
-- BOTH: when the request involves both health analysis AND task creation together
-- DIRECT: simple greetings, general chat, explaining what you can do
-
-IMPORTANT: If the user mentions drinking water or logging water intake, ALWAYS use HEALTH_AGENT.
-IMPORTANT: If the user wants to create or add a task, ALWAYS use TASK_AGENT.
-
-Respond with ONLY one of: HEALTH_AGENT, TASK_AGENT, BOTH, DIRECT
-Then on the next line, if DIRECT, write your response.`;
-
-  const routingResponse = await groq.chat.completions.create({
-    model: MODEL,
-    messages: [
-      { role: 'system', content: routingPrompt },
-      ...recentHistory.slice(-4).map(h => ({ role: h.role, content: h.content })),
-      { role: 'user', content: userMessage }
-    ],
-    temperature: 0.3,
-    max_tokens: 300
-  });
-
-  const routingContent = routingResponse.choices[0].message.content;
-  const firstLine = routingContent.split('\n')[0].trim();
-  const directResponse = routingContent.split('\n').slice(1).join('\n').trim();
-
+  const agents = decision.intents.filter(i => i.agent !== 'direct');
   let finalResponse = '';
   let agentUsed = 'orchestrator';
   let metadata = {};
 
-  if (firstLine === 'HEALTH_AGENT') {
+  if (decision.clarify && decision.clarifyingQuestion) {
+    agentUsed = 'direct';
+    finalResponse = decision.clarifyingQuestion;
+  } else if (agents.length === 0) {
+    agentUsed = 'direct';
+    finalResponse = decision.directReply || "Sorry, I didn't quite catch that. Could you rephrase?";
+  } else if (agents.length === 1 && agents[0].agent === 'health') {
     agentUsed = 'health';
-    const result = await runHealthAgent(userId, userMessage);
+    const result = await runHealthAgent(userId, agents[0].query);
     finalResponse = result.response;
     metadata = result.data;
-  } else if (firstLine === 'TASK_AGENT') {
+  } else if (agents.length === 1) {
     agentUsed = 'task';
-    const result = await runTaskAgent(userId, userMessage);
+    const result = await runTaskAgent(userId, agents[0].query);
     finalResponse = result.response;
     metadata = { taskCreated: result.taskCreated };
-    if (result.taskCreated?.priority === 'high' || result.taskCreated?.due_time) {
-      await runReminderAgent(
-        userId,
-        result.taskCreated.id,
-        `Reminder: ${result.taskCreated.title}`,
-        result.taskCreated.due_time
-      );
-    }
-  } else if (firstLine === 'BOTH') {
+    await maybeRemind(userId, result.taskCreated);
+  } else {
     agentUsed = 'multi';
+    const hq = agents.find(a => a.agent === 'health').query;
+    const tq = agents.find(a => a.agent === 'task').query;
     const [healthResult, taskResult] = await Promise.all([
-      runHealthAgent(userId, userMessage),
-      runTaskAgent(userId, userMessage)
+      runHealthAgent(userId, hq),
+      runTaskAgent(userId, tq)
     ]);
+    await maybeRemind(userId, taskResult.taskCreated);
     const synthesisResponse = await groq.chat.completions.create({
       model: MODEL,
       messages: [
@@ -82,15 +68,18 @@ Then on the next line, if DIRECT, write your response.`;
     });
     finalResponse = synthesisResponse.choices[0].message.content;
     metadata = { ...healthResult.data, taskCreated: taskResult.taskCreated };
-  } else {
-    agentUsed = 'direct';
-    finalResponse = directResponse || routingContent;
   }
 
+    const now = Date.now();
   await supabase.from('chat_history').insert([
-    { id: uuidv4(), user_id: userId, role: 'user', content: userMessage },
-    { id: uuidv4(), user_id: userId, role: 'assistant', content: finalResponse, agent_used: agentUsed }
+    { id: uuidv4(), user_id: userId, role: 'user', content: userMessage, created_at: new Date(now).toISOString() },
+    { id: uuidv4(), user_id: userId, role: 'assistant', content: finalResponse, agent_used: agentUsed, created_at: new Date(now + 1).toISOString() }
   ]);
 
-  return { response: finalResponse, agentUsed, metadata };
+  return {
+    response: finalResponse,
+    agentUsed,
+    metadata,
+    routing: { strategy, intents: decision.intents, clarify: decision.clarify }
+  };
 }
