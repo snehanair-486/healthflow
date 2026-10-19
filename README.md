@@ -105,31 +105,6 @@ HealthFlow is run locally (backend on port 3001, frontend on Vite's dev server).
 | `daily_checkins` | `id`, `user_id`, `sleep_hours`, `mood_score`, `energy_level`, `symptoms`, `notes`, `date`, `logged_at` |
 | `routing_logs` | `id`, `user_id`, `message`, `history`, `strategy`, `intents`, `clarify`, `parse_error`, `latency_ms`, `tokens`, `model`, `created_at` |
 
-`routing_logs` stores one row per routing decision (for analysis). Create it once in the Supabase SQL editor:
-
-```sql
-create table if not exists routing_logs (
-  id uuid primary key default gen_random_uuid(),
-  user_id text,
-  message text,
-  history jsonb,
-  strategy text,
-  intents jsonb,
-  clarify boolean,
-  parse_error boolean,
-  latency_ms int,
-  tokens int,
-  model text,
-  created_at timestamptz default now()
-);
-
-alter table routing_logs enable row level security;
-create policy "backend can insert routing logs" on routing_logs
-  for insert to anon with check (true);
-
-notify pgrst, 'reload schema';
-```
-
 ---
 
 ## 📁 Project Structure
