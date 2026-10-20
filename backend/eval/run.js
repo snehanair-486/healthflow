@@ -43,7 +43,7 @@ for (const strategy of strategies) {
       const pred = [...new Set(d.intents.map(i => i.agent))].sort();
       const exp = [...t.expected].sort();
 
-      const exact = t.score_agent === false ? '' : pred.join('|') === exp.join('|');
+       const exact = (t.score_agent === false || t.expected_clarify) ? '' : pred.join('|') === exp.join('|');
 
       let ctxOk = '';
       if (t.expected_query_contains) {
